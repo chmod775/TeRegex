@@ -38,7 +38,6 @@
     <style>
       .myInlineDecoration {
         color: red !important;
-        cursor: pointer;
         text-decoration: underline;
         font-weight: bold;
         font-style: oblique;
@@ -71,10 +70,7 @@
             </select>
           </div>
 
-          <button class="btn w-100 mb-3" v-bind:class="{ 'btn-outline-primary': action_selected != null, 'btn-primary': action_selected == null }"  v-on:click="select_original">Original</button>
-
           <div class="list-group">
-
             <draggable v-model="actions" @start="drag_start" @end="drag_end">
               <action-item id="demo1" inline-template v-for="actionItem in actions" v-bind:item="actionItem" v-bind:selected="action_selected" v-bind:select="select_action" v-bind:refresh="refresh">
                 <div v-on:click="select(item)" class="list-group-item list-group-item-action" v-bind:class="{ 'active': (selected != null) && (+item.id == +selected.id) }">
@@ -93,11 +89,14 @@
                 </div>
               </action-item>
             </draggable>
-
-            <h5 class="w-100 text-center" v-if="actions.length == 0">No actions</h5>
-
-            <button class="btn btn-sm btn-outline-dark w-100 mt-3" v-on:click="new_action"><i class="fas fa-plus-square"></i> Create Action</button>
           </div>
+
+          <h5 class="w-100 text-center" v-if="actions.length == 0">No actions</h5>
+
+          <button class="btn btn-sm btn-outline-dark w-100 mt-3" v-on:click="new_action"><i class="fas fa-plus-square"></i> Create Action</button>
+
+          <button class="btn w-100 mt-3" v-bind:class="{ 'btn-outline-primary': action_selected != null, 'btn-primary': action_selected == null }"  v-on:click="select_output">Output</button>
+
 
           <div class="new-action p-2 border-top" v-if="action_selected == null">
             <h5 class="w-100 text-center">No action selected</h5>
@@ -121,14 +120,14 @@
             <div class="form-group">
               <div class="row no-gutters">
                 <div class="col-2 text-right pr-2 d-flex align-items-center">Find</div>
-                <div class="col-10"><input type="text" class="form-control form-control-sm" v-model="action_selected.data.regex_find" @change="refresh"></div>
+                <div class="col-10"><input type="text" class="form-control form-control-sm" v-model="action_selected.data.regex_find" @change="update_selected_action"></div>
               </div>
             </div>
 
             <div class="form-group">
               <div class="row no-gutters">
                 <div class="col-2 text-right pr-2 d-flex align-items-center">Replace</div>
-                <div class="col-10"><input type="text" class="form-control form-control-sm" v-model="action_selected.data.regex_replace" @change="refresh"></div>
+                <div class="col-10"><input type="text" class="form-control form-control-sm" v-model="action_selected.data.regex_replace" @change="update_selected_action"></div>
               </div>
             </div>
           </div>
