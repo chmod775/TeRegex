@@ -66,7 +66,7 @@
             </div>
 
             <select class="form-control form-control w-25" v-model="revision_selected" @change="select_revision(revision_selected)">
-              <option v-for="revisionItem in revisions" v-bind:value="revisionItem.rev">Rev. {{revisionItem.rev}}</option>
+              <option v-for="revisionItem in revisions" v-bind:value="revisionItem.rev">{{ (revisionItem.rev == 0) ? 'Original' : 'Rev. ' + revisionItem.rev }}</option>
             </select>
           </div>
 
@@ -93,7 +93,7 @@
 
           <h5 class="w-100 text-center" v-if="actions.length == 0">No actions</h5>
 
-          <button class="btn btn-sm btn-outline-dark w-100 mt-3" v-on:click="new_action"><i class="fas fa-plus-square"></i> Create Action</button>
+          <button class="btn btn-outline-dark w-100 mt-3" v-on:click="new_action">Create Action</button>
 
           <button class="btn w-100 mt-3" v-bind:class="{ 'btn-outline-primary': action_selected != null, 'btn-primary': action_selected == null }"  v-on:click="select_output">Output</button>
 
@@ -108,8 +108,9 @@
                 <div class="col-2 justify-content-center pr-2 d-flex align-items-center"><b>#{{action_selected.id}}</b></div>
                 <div class="col-10">
                   <select class="form-control form-control-sm">
-                    <option>Replace</option>
-                    <option>Find</option>
+                    <option>Find & Replace</option>
+                    <option disabled>Replace</option>
+                    <option disabled>Find</option>
                     <option disabled>Repeat</option>
                     <option disabled>Each</option>
                   </select>
@@ -167,7 +168,8 @@
           editor = monaco.editor.create(document.getElementById('editor'), {
             value: '',
             language: 'text',
-            automaticLayout: true
+            automaticLayout: true,
+            readOnly: true
           });
         });
       })();

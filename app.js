@@ -18,7 +18,8 @@ class Action {
     this.enabled = true;
   }
 
-  selected() {}
+  preview() {}
+  apply() {}
 }
 
 class ReplaceAction extends Action {
@@ -33,7 +34,7 @@ class ReplaceAction extends Action {
     );
   }
 
-  selected() {
+  preview() {
     var model = editor.getModel();
     var matches = model.findMatches(this.data.regex_find);
 
@@ -42,6 +43,11 @@ class ReplaceAction extends Action {
       newDecorations.push({ range: matchItem.range, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: 'red' } }});
 
     var decorations = editor.deltaDecorations([], newDecorations);
+  }
+
+  apply(original) {
+    var re = new RegExp(this.data.regex_find, "g");
+    return original.replace(re, this.data.regex_replace);
   }
 }
 
@@ -71,7 +77,6 @@ var app = new Vue({
     select_action: function(item) {
       this.action_selected = item;
       this.refresh();
-      this.action_selected.selected();
     },
     remove_action: function(item) {
       this.refresh();
@@ -87,7 +92,6 @@ var app = new Vue({
 
     update_selected_action: function() {
       this.refresh();
-      this.action_selected.selected();
     },
     select_output: function() {
       this.action_selected = null;
@@ -96,14 +100,6 @@ var app = new Vue({
 
 
     refresh: function(bypass_original_editing) {
-      /*
-      bypass_original_editing = bypass_original_editing || false;
-      if (!bypass_original_editing)
-        if (!editor.getConfiguration().readOnly)
-          this.original_content = editor.getValue();
-
-      editor.updateOptions({ readOnly: this.action_selected != null });
-      */
       var output = this.original_content;
 
       for (var idx in this.actions) {
@@ -113,29 +109,34 @@ var app = new Vue({
           if (action_item.id == this.action_selected.id)
             break;
 
-        if (action_item.enabled) {
-          var re = new RegExp(action_item.data.regex_find, "g");
-          output = output.replace(re, action_item.data.regex_replace);
-        }
+        if (action_item.enabled)
+          output = action_item.apply(output);
       }
 
       editor.setValue(output);
+
+      if (this.action_selected != null)
+        this.action_selected.preview();
+
       return output;
     },
 
     select_revision: function(rev) {
       var revision_item = this.revisions.filter(t => t.rev == rev)[0];
 
+      this.actions = [];
+      this.action_id_counter = 0;
       for (var actionItem of revision_item.actions) {
         var newAction = null;
         if (actionItem.type == 'replace')
           newAction = new ReplaceAction(actionItem.id, actionItem.data);
         this.actions.push(newAction);
+
+        if (+actionItem.id > this.action_id_counter)
+          this.action_id_counter = +actionItem.id;
       }
 
-      this.action_selected = this.actions.filter(t => t.id == revision_item.selected_action_id)[0] || null;
-
-      this.action_id_counter = this.actions.reduce((prev, current) => (+prev.id > +current.id) ? prev.id : current.id, 0) + 1;
+      this.select_action(null); //this.actions.filter(t => t.id == revision_item.selected_action_id)[0] || null);
 
       this.revision_selected = revision_item.rev;
       this.refresh();
@@ -160,9 +161,9 @@ var app = new Vue({
                 $this.original_filename = trex_project.original_filename;
                 $this.revisions = trex_project.revisions;
 
-                $this.select_revision(trex_project.revisions[trex_project.revisions.length - 1].rev);
-
                 $this.original_content = fs.readFileSync(trex_project.original_filename, 'latin1');
+
+                $this.select_revision(trex_project.revisions[trex_project.revisions.length - 1].rev);
               } else {
                 alert("Impossible to retrive the original file.");
               }
