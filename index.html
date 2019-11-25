@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!-- Fontawesome CDN -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+
+    <title>TeRegex</title>
+
+    <!-- Vue.js -->
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs/Sortable.min.js"></script>
+    <!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.20.0/vuedraggable.umd.min.js"></script>
+
+    <script src="components/action-item.js"></script>
+
+    <style>
+      .new-action-container {
+        position: relative;
+      }
+      .new-action {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        left: 0;
+      }
+    </style>
+
+    <style>
+      .myInlineDecoration {
+        color: red !important;
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: bold;
+        font-style: oblique;
+      }
+
+      .myLineDecoration {
+        background: lightblue;
+        width: 5px !important;
+        margin-left: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+
+      <div class="row no-gutters">
+        <div class="col-8" style="height: 100vh;">
+          <div id="editor" class="h-100"></div>
+        </div>
+
+        <div class="col-4 p-2 new-action-container">
+          <div class="d-flex justify-content-between mb-3">
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-outline-dark" v-on:click="open_original">Open</button>
+              <button type="button" class="btn btn-outline-dark" v-on:click="save_revision">Save</button>
+            </div>
+
+            <select class="form-control form-control w-25" v-model="revision_selected" @change="select_revision(revision_selected)">
+              <option v-for="revisionItem in revisions" v-bind:value="revisionItem.rev">Rev. {{revisionItem.rev}}</option>
+            </select>
+          </div>
+
+          <button class="btn w-100 mb-3" v-bind:class="{ 'btn-outline-primary': action_selected != null, 'btn-primary': action_selected == null }"  v-on:click="select_original">Original</button>
+
+          <div class="list-group">
+
+            <draggable v-model="actions" @start="drag_start" @end="drag_end">
+              <action-item id="demo1" inline-template v-for="actionItem in actions" v-bind:item="actionItem" v-bind:selected="action_selected" v-bind:select="select_action" v-bind:refresh="refresh">
+                <div v-on:click="select(item)" class="list-group-item list-group-item-action" v-bind:class="{ 'active': (selected != null) && (+item.id == +selected.id) }">
+                  <div class="d-flex justify-content-between">
+                    <div class="mr-2">
+                      <i class="fas fa-sort"></i>
+                      <b>#{{ item.id }}</b>
+                    </div>
+                    <div class="flex-grow-1">{{ JSON.stringify(item.data) }}</div>
+                    <div>
+                      <i class="far fa-trash-alt mr-2"></i>
+                      <i class="fas fa-eye" v-if="item.enabled" v-on:click.stop="set_enabled(false)"></i>
+                      <i class="fas fa-eye-slash" v-if="!item.enabled" v-on:click.stop="set_enabled(true)"></i>
+                    </div>
+                  </div>
+                </div>
+              </action-item>
+            </draggable>
+
+            <h5 class="w-100 text-center" v-if="actions.length == 0">No actions</h5>
+
+            <button class="btn btn-sm btn-outline-dark w-100 mt-3" v-on:click="new_action"><i class="fas fa-plus-square"></i> Create Action</button>
+          </div>
+
+          <div class="new-action p-2 border-top" v-if="action_selected == null">
+            <h5 class="w-100 text-center">No action selected</h5>
+          </div>
+
+          <div class="new-action p-2 border-top" v-if="action_selected != null">
+            <div class="form-group">
+              <div class="row no-gutters">
+                <div class="col-2 justify-content-center pr-2 d-flex align-items-center"><b>#{{action_selected.id}}</b></div>
+                <div class="col-10">
+                  <select class="form-control form-control-sm">
+                    <option>Replace</option>
+                    <option>Find</option>
+                    <option disabled>Repeat</option>
+                    <option disabled>Each</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="row no-gutters">
+                <div class="col-2 text-right pr-2 d-flex align-items-center">Find</div>
+                <div class="col-10"><input type="text" class="form-control form-control-sm" v-model="action_selected.data.regex_find" @change="refresh"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="row no-gutters">
+                <div class="col-2 text-right pr-2 d-flex align-items-center">Replace</div>
+                <div class="col-10"><input type="text" class="form-control form-control-sm" v-model="action_selected.data.regex_replace" @change="refresh"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+
+    <script>
+      var editor = null;
+    </script>
+
+    <script src="app.js"></script>
+
+
+    <script>
+      (function() {
+        const path = require('path');
+        const amdLoader = require('./node_modules/monaco-editor/min/vs/loader.js');
+        const amdRequire = amdLoader.require;
+        const amdDefine = amdLoader.require.define;
+        function uriFromPath(_path) {
+          var pathName = path.resolve(_path).replace(/\\/g, '/');
+          if (pathName.length > 0 && pathName.charAt(0) !== '/') {
+            pathName = '/' + pathName;
+          }
+          return encodeURI('file://' + pathName);
+        }
+        amdRequire.config({
+          baseUrl: uriFromPath(path.join(__dirname, './node_modules/monaco-editor/min'))
+        });
+        // workaround monaco-css not understanding the environment
+        self.module = undefined;
+        amdRequire(['vs/editor/editor.main'], function() {
+          editor = monaco.editor.create(document.getElementById('editor'), {
+            value: '',
+            language: 'text',
+            automaticLayout: true
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

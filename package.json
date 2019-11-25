@@ -1,0 +1,17 @@
+{
+  "name": "teregex",
+  "version": "1.0.0",
+  "description": "Text regex magic",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Michele Trombetta (AlienLogic)",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^7.1.2"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.18.1"
+  }
+}
