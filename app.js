@@ -66,7 +66,7 @@ class FindAndReplaceAction extends Action {
 
     var newDecorations = [];
     for (var matchItem of matches)
-      newDecorations.push({ range: matchItem.range, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: 'red' } }});
+      newDecorations.push({ range: matchItem.range, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: '#28a745' } }});
 
     var decorations = editor.deltaDecorations([], newDecorations);
   }
@@ -116,7 +116,7 @@ class ReplaceSelectionAction extends Action {
     
     var newDecorations = [];
     for (var rangeItem of this.data.selections)
-      newDecorations.push({ range: rangeItem, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: 'red' } }});
+      newDecorations.push({ range: rangeItem, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: '#28a745' } }});
 
     var decorations = editor.deltaDecorations([], newDecorations);
   }
@@ -184,7 +184,6 @@ var app = new Vue({
 
       this.select_action(null);
     },
-
 
     drag_start: function() {
       //this.action_selected = null;
@@ -260,6 +259,40 @@ var app = new Vue({
 
       this.revision_selected = revision_item.rev;
       this.refresh();
+    },
+
+    import_actions: function() {
+      var $this = this;
+      const selectedPaths = dialog.showOpenDialog();
+      selectedPaths.then(val => {
+        if (val.filePaths) {
+          try {
+            var original_path = path.parse(val.filePaths[0]);
+            
+            // Try to open t-rex
+            var trex_path = path.join(original_path.dir, original_path.name.replace(/_rev\d+/g, '') + '.trex');
+            if (fs.existsSync(trex_path)) {
+              var trex_project = JSON.parse(fs.readFileSync(trex_path, 'utf-8'));
+
+              if (fs.existsSync(trex_project.original_filename)) {
+                $this.revisions = trex_project.revisions;
+
+                $this.select_revision(trex_project.revisions[trex_project.revisions.length - 1].rev);
+              } else {
+                alert("Impossible to retrive the original file.");
+              }
+
+              console.log(trex_project);
+            } else {
+            }
+
+            $this.refresh(true);
+          } catch (ex) {
+            alert("An error ocurred reading the file :" + err.message);
+            return;
+          }
+        }
+      });
     },
 
     open_original: function() {

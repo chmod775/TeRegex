@@ -14,12 +14,16 @@ function createWindow () {
       webPreferences: {
         nodeIntegration: true
       }
-    })
-	mainWindow.loadURL(`file://${__dirname}/index.html`)
+    });
+  
+  mainWindow.setMenu(null);
+
+	mainWindow.loadURL(`file://${__dirname}/index.html`);
+
 	//mainWindow.webContents.openDevTools()
 	mainWindow.on('closed', function () {
 		mainWindow = null
-	})
+	});
 }
 
 // This method will be called when Electron has finished

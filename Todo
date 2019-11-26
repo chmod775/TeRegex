@@ -1,0 +1,35 @@
+# _______   _____                      
+# |__   __| |  __ \                     
+#    | | ___| |__) |___  __ _  _____  __
+#    | |/ _ \  _  // _ \/ _` |/ _ \ \/ /
+#    | |  __/ | \ \  __/ (_| |  __/>  < 
+#    |_|\___|_|  \_\___|\__, |\___/_/\_\
+#                        __/ |          
+#                       |___/           
+#
+#	Developed by Michele Trombetta
+#   
+#   ! : IMPORTANT
+#   - : TODO
+#   / : IN PROGRESS
+#   + : DONE
+#   # : REMOVED
+
+
+v1.0
+    ! Check if there are changes to create new revision
+    - Add RegExpr documentation
+    - Add guided RegExpr creation
+      - From selected text, highlight parts that need to be ignore and auto generate RegExpr
+
+    - Visual rappresentation of RegExpr
+    - Add 'child' actions
+      - example: Be able to inherate all bracket groups in a JSON and numerate them
+      - example: Be able to inherate all bracket groups in a JSON and capitalize all the keys
+
+    - Add RegExpr examples
+    - Add multi Copy / Paste pallette
+    - Add global pallette for RegExpr (shared for all files)
+
+v2.0
+    - Create RegExpr using GUI modules (drag & drop support)
