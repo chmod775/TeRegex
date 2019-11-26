@@ -12,7 +12,10 @@ Vue.component('action-item', {
       this.item.enabled = enabled;
       this.refresh();
       return null;
+    },
+    delete_action: function() {
+      this.delete(this.item);
     }
   },
-  props: ['item', 'selected', 'select', 'refresh']
+  props: ['item', 'selected', 'select', 'refresh', 'delete']
 })

@@ -73,7 +73,7 @@ class FindAndReplaceAction extends Action {
 
   apply(original) {
     var re = new RegExp(this.data.regex_find, this.data.regex_flags);
-    return original.replace(re, this.data.regex_replace);
+    return original.replace(re, JSON.parse('"' + this.data.regex_replace + '"'));
   }
 }
 
@@ -125,7 +125,7 @@ class ReplaceSelectionAction extends Action {
     var model = monaco.editor.createModel(original, "text/plain");
 
     for (var rangeItem of this.data.selections)
-      model.applyEdits([{ range: rangeItem, text: this.data.replace_content }]);
+      model.applyEdits([{ range: rangeItem, text: JSON.parse('"' + this.data.replace_content + '"') }]);
 
     return model.getValue();
   }
@@ -163,8 +163,26 @@ var app = new Vue({
       this.action_selected = item;
       this.refresh();
     },
-    remove_action: function(item) {
-      this.refresh();
+    show_delete_action: function(item) {
+      this.select_action(item);
+      $('#deleteModal').modal('show');
+    },
+    delete_selected_action: function() {
+      $('#deleteModal').modal('hide');
+
+      var foundIdx = -1;
+      for (var idx in this.actions) {
+        var actionItem = this.actions[idx];
+        if (actionItem.id == this.action_selected.id) {
+          foundIdx = idx;
+          break;
+        }
+      }
+
+      if (foundIdx >= 0)
+        this.actions.splice(foundIdx, 1);
+
+      this.select_action(null);
     },
 
 
@@ -231,7 +249,7 @@ var app = new Vue({
       this.action_id_counter = 0;
       for (var actionItem of revision_item.actions) {
         var newAction = new actions_toolbox[actionItem.type](actionItem.id, actionItem.data);
-
+        newAction.enabled = actionItem.enabled;
         this.actions.push(newAction);
 
         if (+actionItem.id > this.action_id_counter)
@@ -302,6 +320,10 @@ var app = new Vue({
           if (!fs.existsSync(path.join(original_path.dir, name_with_revision + original_path.ext)))
             break;
         }
+
+        if (this.revisions.length > 0)
+          if (JSON.stringify(this.actions) == JSON.stringify(this.revisions[this.revisions.length - 1].actions))
+            return;
 
         // Create revision
         var newRevision = new Revision(rev, this.actions, this.action_selected);

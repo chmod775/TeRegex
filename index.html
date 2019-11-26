@@ -58,7 +58,7 @@
           <div id="editor" class="h-100"></div>
         </div>
 
-        <div class="col-4 p-2 new-action-container">
+        <div class="col-4 p-2">
           <div class="d-flex justify-content-between mb-3">
             <div class="btn-group" role="group">
               <button type="button" class="btn btn-outline-dark" v-on:click="open_original">Open</button>
@@ -70,69 +70,89 @@
             </select>
           </div>
 
-          <div class="list-group">
-            <draggable v-model="actions" @start="drag_start" @end="drag_end">
-              <action-item id="demo1" inline-template v-for="actionItem in actions" v-bind:item="actionItem" v-bind:selected="action_selected" v-bind:select="select_action" v-bind:refresh="refresh">
-                <div v-on:click="select(item)" class="list-group-item list-group-item-action" v-bind:class="{ 'active': (selected != null) && (+item.id == +selected.id) }">
-                  <div class="d-flex justify-content-between">
-                    <div class="mr-2">
-                      <i class="fas fa-sort"></i>
-                      <b>#{{ item.id }}</b>
+          <div class="d-flex flex-column align-items-stretch" style="height: calc(100vh - 70px);">
+            <div class="w-100" style="overflow-y: auto;">
+              <div class="list-group">
+                <draggable v-model="actions" @start="drag_start" @end="drag_end">
+                  <action-item id="demo1" inline-template v-for="actionItem in actions" v-bind:item="actionItem" v-bind:selected="action_selected" v-bind:select="select_action" v-bind:refresh="refresh" v-bind:delete="show_delete_action">
+                    <div v-on:click="select(item)" class="list-group-item list-group-item-action" v-bind:class="{ 'active': (selected != null) && (+item.id == +selected.id) }">
+                      <div class="d-flex justify-content-between">
+                        <div class="mr-2">
+                          <i class="fas fa-sort"></i>
+                          <b>#{{ item.id }}</b>
+                        </div>
+                        <div class="flex-grow-1">{{ item.description() }}</div>
+                        <div>
+                          <i class="far fa-trash-alt mr-2" v-on:click.stop="delete_action()"></i>
+                          <i class="fas fa-eye" v-if="item.enabled" v-on:click.stop="set_enabled(false)"></i>
+                          <i class="fas fa-eye-slash" v-if="!item.enabled" v-on:click.stop="set_enabled(true)"></i>
+                        </div>
+                      </div>
                     </div>
-                    <div class="flex-grow-1">{{ item.description() }}</div>
-                    <div>
-                      <i class="far fa-trash-alt mr-2"></i>
-                      <i class="fas fa-eye" v-if="item.enabled" v-on:click.stop="set_enabled(false)"></i>
-                      <i class="fas fa-eye-slash" v-if="!item.enabled" v-on:click.stop="set_enabled(true)"></i>
-                    </div>
+                  </action-item>
+                </draggable>
+              </div>
+
+              <h5 class="w-100 text-center" v-if="actions.length == 0">No actions</h5>
+
+              <button class="btn btn-outline-dark w-100 mt-3" v-on:click="new_action">Create Action</button>
+
+              <button class="btn w-100 mt-3 mb-3" v-bind:class="{ 'btn-outline-primary': action_selected != null, 'btn-primary': action_selected == null }"  v-on:click="select_output">Output</button>
+            </div>
+
+            <div class="w-100 p-2 border-top" v-if="action_selected == null">
+              <h5 class="w-100 text-center">No action selected</h5>
+            </div>
+
+            <div class="w-100 p-2 border-top" v-if="action_selected != null">
+              <div class="form-group">
+                <div class="row no-gutters">
+                  <div class="col-2 justify-content-center pr-2 d-flex align-items-center"><b>#{{action_selected.id}}</b></div>
+                  <div class="col-10">
+                    <select class="form-control form-control-sm" v-model="action_selected.type" @change="action_type_changed()">
+                      <option value="FindAndReplaceAction">Find & Replace</option>
+                      <option value="ReplaceSelectionAction">Replace selection</option>
+                      <option disabled>Replace</option>
+                      <option disabled>Find</option>
+                      <option disabled>Repeat</option>
+                      <option disabled>Each</option>
+                    </select>
                   </div>
                 </div>
-              </action-item>
-            </draggable>
-          </div>
+              </div>
 
-          <h5 class="w-100 text-center" v-if="actions.length == 0">No actions</h5>
+              <div class="form-group" v-for="(value, key) in action_selected.properties()">
+                <div class="d-flex" v-if="value.data">
+                  <div class="text-right pr-2 d-flex align-items-center" v-if="value.description">{{ value.description }}</div>
+                  <div class="flex-grow-1" v-if="!value.choose"><input type="text" class="form-control form-control-sm" v-model="action_selected.data[value.data]" @change="update_selected_action"></div>
+                  <div class="flex-grow-1" v-if="value.choose">
+                    <select class="form-control form-control-sm">
+                      <option v-for="chooseItem in value.choose">{{chooseItem}}</option>
+                    </select>
+                  </div>
+                </div>
 
-          <button class="btn btn-outline-dark w-100 mt-3" v-on:click="new_action">Create Action</button>
-
-          <button class="btn w-100 mt-3" v-bind:class="{ 'btn-outline-primary': action_selected != null, 'btn-primary': action_selected == null }"  v-on:click="select_output">Output</button>
-
-
-          <div class="new-action p-2 border-top" v-if="action_selected == null">
-            <h5 class="w-100 text-center">No action selected</h5>
-          </div>
-
-          <div class="new-action p-2 border-top" v-if="action_selected != null">
-            <div class="form-group">
-              <div class="row no-gutters">
-                <div class="col-2 justify-content-center pr-2 d-flex align-items-center"><b>#{{action_selected.id}}</b></div>
-                <div class="col-10">
-                  <select class="form-control form-control-sm" v-model="action_selected.type" @change="action_type_changed()">
-                    <option value="FindAndReplaceAction">Find & Replace</option>
-                    <option value="ReplaceSelectionAction">Replace selection</option>
-                    <option disabled>Replace</option>
-                    <option disabled>Find</option>
-                    <option disabled>Repeat</option>
-                    <option disabled>Each</option>
-                  </select>
+                <div class="d-flex" v-if="value.function">
+                  <button class="btn btn-primary flex-grow-1 h-100" v-on:click="value.function(action_selected)">{{ value.description }}</button>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div class="form-group" v-for="(value, key) in action_selected.properties()">
-              <div class="d-flex" v-if="value.data">
-                <div class="text-right pr-2 d-flex align-items-center" v-if="value.description">{{ value.description }}</div>
-                <div class="flex-grow-1" v-if="!value.choose"><input type="text" class="form-control form-control-sm" v-model="action_selected.data[value.data]" @change="update_selected_action"></div>
-                <div class="flex-grow-1" v-if="value.choose">
-                  <select class="form-control form-control-sm">
-                    <option v-for="chooseItem in value.choose">{{chooseItem}}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="d-flex" v-if="value.function">
-                <button class="btn btn-primary flex-grow-1 h-100" v-on:click="value.function(action_selected)">{{ value.description }}</button>
-              </div>
+      <div class="modal" tabindex="-1" role="dialog" id="deleteModal">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Delete action</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cance</button>
+              <button type="button" class="btn btn-danger" v-on:click="delete_selected_action">Delete</button>
             </div>
           </div>
         </div>
@@ -141,13 +161,16 @@
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-
     <script>
       var editor = null;
     </script>
 
-    <script src="app.js"></script>
+    <script>
+      window.$ = window.jQuery = require('jquery'); // not sure if you need this at all
+      window.Bootstrap = require('bootstrap');
+    </script>
 
+    <script src="app.js"></script>
 
     <script>
       (function() {
