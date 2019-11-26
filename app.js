@@ -13,30 +13,56 @@ class Revision {
 class Action {
   constructor(id, type, data) {
     this.id = id;
-    this.type = type || 'NONE';
+    this.type = type || 'Action';
     this.data = data || {};
     this.enabled = true;
+  }
+
+  description() {
+    return JSON.stringify(this.data);
   }
 
   preview() {}
   apply() {}
 }
 
-class ReplaceAction extends Action {
+class FindAndReplaceAction extends Action {
   constructor(id, data) {
     super(
       id,
-      'replace',
+      'FindAndReplaceAction',
       data || {
         regex_find: '',
-        regex_replace: ''
+        regex_replace: '',
+        regex_flags: 'gm'
       }
     );
   }
 
+  properties() {
+    return {
+      find: {
+        description: 'Find',
+        data: 'regex_find'
+      },
+      replace: {
+        description: 'Replace',
+        data: 'regex_replace'       
+      },
+      flags: {
+        description: 'Flags',
+        data: 'regex_flags'       
+      }
+    }
+  }
+
+  description() {
+    return `/${this.data.regex_find}/${this.data.regex_flags} -> ${this.data.regex_replace}`;
+  }
+
   preview() {
     var model = editor.getModel();
-    var matches = model.findMatches(this.data.regex_find);
+    var matches = model.findMatches(this.data.regex_find, false, true, true);
 
     var newDecorations = [];
     for (var matchItem of matches)
@@ -46,10 +72,69 @@ class ReplaceAction extends Action {
   }
 
   apply(original) {
-    var re = new RegExp(this.data.regex_find, "g");
+    var re = new RegExp(this.data.regex_find, this.data.regex_flags);
     return original.replace(re, this.data.regex_replace);
   }
 }
+
+class ReplaceSelectionAction extends Action {
+  constructor(id, data) {
+    super(
+      id,
+      'ReplaceSelectionAction',
+      data || {
+        selections: [],
+        replace_content: ''
+      }
+    );
+  }
+
+  description() {
+    return `${this.data.selections.length} selection${this.data.selections.length > 1 ? 's' : ''} -> ${this.data.replace_content}`;
+  }
+
+  properties() {
+    return {
+      selection: {
+        description: 'Update selection',
+        function: this.getSelection
+      },
+      replace: {
+        description: 'Replace',
+        data: 'replace_content'       
+      }
+    }
+  }
+
+  getSelection(sender) {
+    sender.data.selections = editor.getSelections();
+    sender.preview();
+  }
+
+  preview() {
+    var model = editor.getModel();
+    
+    var newDecorations = [];
+    for (var rangeItem of this.data.selections)
+      newDecorations.push({ range: rangeItem, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: 'red' } }});
+
+    var decorations = editor.deltaDecorations([], newDecorations);
+  }
+
+  apply(original) {
+    var model = monaco.editor.createModel(original, "text/plain");
+
+    for (var rangeItem of this.data.selections)
+      model.applyEdits([{ range: rangeItem, text: this.data.replace_content }]);
+
+    return model.getValue();
+  }
+}
+
+const actions_toolbox = {
+  FindAndReplaceAction: FindAndReplaceAction,
+  ReplaceSelectionAction: ReplaceSelectionAction
+};
 
 var app = new Vue({
   el: '#app',
@@ -69,7 +154,7 @@ var app = new Vue({
   methods: {
     new_action: function() {
       this.action_id_counter++;
-      var newItem = new ReplaceAction(+this.action_id_counter);
+      var newItem = new FindAndReplaceAction(+this.action_id_counter);
       this.actions.push(newItem);
       this.action_selected = newItem;
       this.refresh();
@@ -99,6 +184,24 @@ var app = new Vue({
     },
 
 
+    action_type_changed: function() {
+      var foundIdx = -1;
+      for (var idx in this.actions) {
+        var actionItem = this.actions[idx];
+        if (actionItem.id == this.action_selected.id) {
+          foundIdx = idx;
+          break;
+        }
+      }
+
+      if (foundIdx >= 0) {
+        this.actions.splice(foundIdx, 1);
+        var newAction = new actions_toolbox[this.action_selected.type](this.action_selected.id, null);
+        this.actions.splice(foundIdx, 0, newAction);
+        this.action_selected = newAction;
+      }
+    },
+
     refresh: function(bypass_original_editing) {
       var output = this.original_content;
 
@@ -127,9 +230,8 @@ var app = new Vue({
       this.actions = [];
       this.action_id_counter = 0;
       for (var actionItem of revision_item.actions) {
-        var newAction = null;
-        if (actionItem.type == 'replace')
-          newAction = new ReplaceAction(actionItem.id, actionItem.data);
+        var newAction = new actions_toolbox[actionItem.type](actionItem.id, actionItem.data);
+
         this.actions.push(newAction);
 
         if (+actionItem.id > this.action_id_counter)
