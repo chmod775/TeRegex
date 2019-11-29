@@ -33,7 +33,9 @@ class FindAndReplaceAction extends Action {
     return `/${this.data.regex_find}/${this.data.regex_flags} -> ${this.data.regex_replace}`;
   }
 
-  $preview() {
+  $preview(preoutput, output) {
+    editor.setValue(preoutput);
+
     var model = editor.getModel();
     var matches = model.findMatches(this.data.regex_find, false, true, true);
 
@@ -41,7 +43,7 @@ class FindAndReplaceAction extends Action {
     for (var matchItem of matches)
       newDecorations.push({ range: matchItem.range, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: '#28a745' } }});
 
-    var decorations = editor.deltaDecorations([], newDecorations);
+    editor.deltaDecorations([], newDecorations);
   }
 
   $apply(original) {

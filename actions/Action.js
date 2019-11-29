@@ -14,6 +14,8 @@ class Action {
     return {};
   }
 
-  $preview() {}
+  $preview(preoutput, output) {}
   $apply() {}
+
+  $editorType() { return 'normal'; }
 }

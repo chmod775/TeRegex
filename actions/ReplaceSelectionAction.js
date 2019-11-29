@@ -32,14 +32,14 @@ class ReplaceSelectionAction extends Action {
     sender.preview();
   }
 
-  $preview() {
-    var model = editor.getModel();
-    
+  $preview(preoutput, output) {
+    editor.setValue(preoutput);
+
     var newDecorations = [];
     for (var rangeItem of this.data.selections)
       newDecorations.push({ range: rangeItem, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: '#28a745' } }});
 
-    var decorations = editor.deltaDecorations([], newDecorations);
+    editor.deltaDecorations([], newDecorations);
   }
 
   $apply(original) {

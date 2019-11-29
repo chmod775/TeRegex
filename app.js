@@ -102,23 +102,29 @@ var app = new Vue({
     },
 
     refresh: function(bypass_original_editing) {
+      var preoutput = this.original_content;
       var output = this.original_content;
 
       for (var idx in this.actions) {
         var action_item = this.actions[idx];
 
-        if (this.action_selected != null)
-          if (action_item.id == this.action_selected.id)
-            break;
+        preoutput = output;
 
         if (action_item.enabled)
           output = action_item.$apply(output);
+
+        if (this.action_selected != null)
+          if (action_item.id == this.action_selected.id)
+            break;
       }
 
-      editor.setValue(output);
-
-      if (this.action_selected != null)
-        this.action_selected.$preview();
+      if (this.action_selected) {
+        useEditor(this.action_selected.$editorType());
+        this.action_selected.$preview(preoutput, output);
+      } else {
+        useEditor('normal');
+        editor.setValue(output);
+      }
 
       // Update pending changes
       this.pending_changes = this.check_if_changes();
@@ -173,7 +179,7 @@ var app = new Vue({
 
             $this.refresh(true);
           } catch (ex) {
-            alert("An error ocurred reading the file :" + err.message);
+            alert("An error ocurred reading the file :" + ex.message);
             return;
           }
         }
@@ -220,7 +226,7 @@ var app = new Vue({
 
             $this.refresh(true);
           } catch (ex) {
-            alert("An error ocurred reading the file :" + err.message);
+            alert("An error ocurred reading the file :" + ex.message);
             return;
           }
         }

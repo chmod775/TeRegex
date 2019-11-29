@@ -173,6 +173,7 @@
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script>
       var editor = null;
+      var diffEditor = null;
     </script>
 
     <script>
@@ -208,14 +209,39 @@
         // workaround monaco-css not understanding the environment
         self.module = undefined;
         amdRequire(['vs/editor/editor.main'], function() {
-          editor = monaco.editor.create(document.getElementById('editor'), {
-            value: '',
-            language: 'text',
-            automaticLayout: true,
-            readOnly: true
-          });
+          useEditor('normal');
         });
       })();
+
+
+      function useEditor(type) {
+        if (type.toLowerCase() == 'diff') {
+          if (editor) {
+            editor.dispose();
+            editor = null;
+          }
+          if (!diffEditor) {
+            diffEditor = monaco.editor.createDiffEditor(document.getElementById("editor"), {
+              language: 'text',
+              automaticLayout: true,
+              readOnly: true
+            });
+          }
+        } else {
+          if (diffEditor) {
+            diffEditor.dispose();
+            diffEditor = null;
+          }
+          if (!editor) {
+            editor = monaco.editor.create(document.getElementById('editor'), {
+              value: '',
+              language: 'text',
+              automaticLayout: true,
+              readOnly: true
+            });
+          }
+        }
+      }
     </script>
   </body>
 </html>
