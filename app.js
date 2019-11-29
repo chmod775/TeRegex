@@ -149,7 +149,9 @@ var app = new Vue({
     action_selected: null,
 
     revisions: [ new Revision(0, [], null) ],
-    revision_selected: 0
+    revision_selected: 0,
+
+    pending_changes: false
   },
   methods: {
     new_action: function() {
@@ -238,6 +240,9 @@ var app = new Vue({
       if (this.action_selected != null)
         this.action_selected.preview();
 
+      // Update pending changes
+      this.pending_changes = this.check_if_changes();
+
       return output;
     },
 
@@ -247,7 +252,7 @@ var app = new Vue({
       this.actions = [];
       this.action_id_counter = 0;
       for (var actionItem of revision_item.actions) {
-        var newAction = new actions_toolbox[actionItem.type](actionItem.id, actionItem.data);
+        var newAction = new actions_toolbox[actionItem.type](actionItem.id, Object.assign({}, actionItem.data));
         newAction.enabled = actionItem.enabled;
         this.actions.push(newAction);
 
@@ -320,11 +325,18 @@ var app = new Vue({
               } else {
                 alert("Impossible to retrive the original file.");
               }
-
-              console.log(trex_project);
             } else {
+              $this.action_id_counter = 0;
+              $this.actions = [];
+              $this.action_selected = null;
+
+              $this.revisions = [ new Revision(0, [], null) ];
+              $this.revision_selected = 0;
+
               $this.original_content = fs.readFileSync(val.filePaths[0], 'latin1');
             }
+
+            $('title').text(trex_path);
 
             $this.refresh(true);
           } catch (ex) {
@@ -333,6 +345,13 @@ var app = new Vue({
           }
         }
       });
+    },
+
+    check_if_changes: function() {
+      if (this.revisions.length > 0)
+        if (JSON.stringify(this.actions) == JSON.stringify(this.revisions[this.revisions.length - 1].actions))
+          return false;
+      return true;
     },
 
     save_revision: function() {
@@ -354,9 +373,8 @@ var app = new Vue({
             break;
         }
 
-        if (this.revisions.length > 0)
-          if (JSON.stringify(this.actions) == JSON.stringify(this.revisions[this.revisions.length - 1].actions))
-            return;
+        if (this.check_if_changes() == false)
+          return;
 
         // Create revision
         var newRevision = new Revision(rev, this.actions, this.action_selected);

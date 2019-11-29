@@ -42,7 +42,7 @@
 
     <style>
       .myInlineDecoration {
-        background-color: #28a745 !important;
+        background-color: #28a74570 !important;
         /*color: red !important;*/
         /*text-decoration: underline;*/
         font-weight: bold;
@@ -75,7 +75,7 @@
               <select class="form-control form-control mr-2" v-model="revision_selected" @change="select_revision(revision_selected)">
                 <option v-for="revisionItem in revisions" v-bind:value="revisionItem.rev">{{ (revisionItem.rev == 0) ? 'Original' : 'Rev. ' + revisionItem.rev }}</option>
               </select>
-              <button type="button" class="btn btn-outline-dark" v-on:click="save_revision">Save</button>
+              <button type="button" class="btn btn-outline-dark" v-on:click="save_revision" v-bind:disabled="!pending_changes">Save</button>
             </div>
           </div>
 

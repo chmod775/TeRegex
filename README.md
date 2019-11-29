@@ -1,6 +1,6 @@
-# Minimal Text Regular Expressions Processor 🚀
+# Minimal Regular Expressions Processor for Text
 
-**⚠️ Regular Expressions power! Handle with care ⚠️**
+**⚠️ ATTENTION: Regular Expressions power! Handle with care ⚠️**
 
 We all know the immense power of Regular Expressions, and we all dreamed a text processor capable of handling that power and making it easy to use daily.
 
