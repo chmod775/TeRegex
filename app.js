@@ -10,130 +10,10 @@ class Revision {
   }
 }
 
-class Action {
-  constructor(id, type, data) {
-    this.id = id;
-    this.type = type || 'Action';
-    this.data = data || {};
-    this.enabled = true;
-  }
-
-  description() {
-    return JSON.stringify(this.data);
-  }
-
-  preview() {}
-  apply() {}
-}
-
-class FindAndReplaceAction extends Action {
-  constructor(id, data) {
-    super(
-      id,
-      'FindAndReplaceAction',
-      data || {
-        regex_find: '',
-        regex_replace: '',
-        regex_flags: 'gm'
-      }
-    );
-  }
-
-  properties() {
-    return {
-      find: {
-        description: 'Find',
-        data: 'regex_find'
-      },
-      replace: {
-        description: 'Replace',
-        data: 'regex_replace'       
-      },
-      flags: {
-        description: 'Flags',
-        data: 'regex_flags'       
-      }
-    }
-  }
-
-  description() {
-    return `/${this.data.regex_find}/${this.data.regex_flags} -> ${this.data.regex_replace}`;
-  }
-
-  preview() {
-    var model = editor.getModel();
-    var matches = model.findMatches(this.data.regex_find, false, true, true);
-
-    var newDecorations = [];
-    for (var matchItem of matches)
-      newDecorations.push({ range: matchItem.range, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: '#28a745' } }});
-
-    var decorations = editor.deltaDecorations([], newDecorations);
-  }
-
-  apply(original) {
-    var re = new RegExp(this.data.regex_find, this.data.regex_flags);
-    return original.replace(re, JSON.parse('"' + this.data.regex_replace + '"'));
-  }
-}
-
-class ReplaceSelectionAction extends Action {
-  constructor(id, data) {
-    super(
-      id,
-      'ReplaceSelectionAction',
-      data || {
-        selections: [],
-        replace_content: ''
-      }
-    );
-  }
-
-  description() {
-    return `${this.data.selections.length} selection${this.data.selections.length > 1 ? 's' : ''} -> ${this.data.replace_content}`;
-  }
-
-  properties() {
-    return {
-      selection: {
-        description: 'Update selection',
-        function: this.getSelection
-      },
-      replace: {
-        description: 'Replace',
-        data: 'replace_content'       
-      }
-    }
-  }
-
-  getSelection(sender) {
-    sender.data.selections = editor.getSelections();
-    sender.preview();
-  }
-
-  preview() {
-    var model = editor.getModel();
-    
-    var newDecorations = [];
-    for (var rangeItem of this.data.selections)
-      newDecorations.push({ range: rangeItem, options: { isWholeLine: false, inlineClassName: 'myInlineDecoration', minimap: { color: '#28a745' } }});
-
-    var decorations = editor.deltaDecorations([], newDecorations);
-  }
-
-  apply(original) {
-    var model = monaco.editor.createModel(original, "text/plain");
-
-    for (var rangeItem of this.data.selections)
-      model.applyEdits([{ range: rangeItem, text: JSON.parse('"' + this.data.replace_content + '"') }]);
-
-    return model.getValue();
-  }
-}
-
 const actions_toolbox = {
   FindAndReplaceAction: FindAndReplaceAction,
-  ReplaceSelectionAction: ReplaceSelectionAction
+  ReplaceSelectionAction: ReplaceSelectionAction,
+  ApplyDiffAction: ApplyDiffAction
 };
 
 var app = new Vue({
@@ -232,13 +112,13 @@ var app = new Vue({
             break;
 
         if (action_item.enabled)
-          output = action_item.apply(output);
+          output = action_item.$apply(output);
       }
 
       editor.setValue(output);
 
       if (this.action_selected != null)
-        this.action_selected.preview();
+        this.action_selected.$preview();
 
       // Update pending changes
       this.pending_changes = this.check_if_changes();

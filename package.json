@@ -15,6 +15,7 @@
   "dependencies": {
     "bootstrap": "^4.3.1",
     "diff": "^4.0.1",
+    "diff-match-patch": "^1.0.4",
     "jquery": "^3.4.1",
     "monaco-editor": "^0.18.1",
     "popper.js": "^1.16.0"
