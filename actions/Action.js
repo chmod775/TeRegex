@@ -4,6 +4,8 @@ class Action {
     this.type = type || 'Action';
     this.data = data || {};
     this.enabled = true;
+    
+    this._cache = null;
   }
 
   $description() {

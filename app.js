@@ -25,6 +25,7 @@ var app = new Vue({
     original_content: '',
 
     action_id_counter: 0,
+    cached_actions: [],
     actions: [],
     action_selected: null,
 
@@ -110,8 +111,10 @@ var app = new Vue({
 
         preoutput = output;
 
-        if (action_item.enabled)
+        if (action_item.enabled) {
           output = action_item.$apply(output);
+          action_item._cache = output;
+        }
 
         if (this.action_selected != null)
           if (action_item.id == this.action_selected.id)
@@ -222,7 +225,7 @@ var app = new Vue({
               $this.original_content = fs.readFileSync(val.filePaths[0], 'latin1');
             }
 
-            $('title').text(trex_path);
+            $('title').text('TeRegex [' + trex_path + ']');
 
             $this.refresh(true);
           } catch (ex) {
