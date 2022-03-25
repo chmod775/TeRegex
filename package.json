@@ -9,7 +9,7 @@
   "author": "Michele Trombetta (AlienLogic)",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^7.1.2",
+    "electron": "^13.6.6",
     "electron-packager": "^14.1.1"
   },
   "dependencies": {
